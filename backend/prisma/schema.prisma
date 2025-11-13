@@ -1,0 +1,53 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-py"
+}
+
+model User {
+
+    id String @id @default(cuid())
+    email String @unique
+    password String 
+    role Role @default(STUDENT)
+    name String
+    createdAt DateTime @default(now())
+
+    timetableEntries TimetableEntry[]
+
+
+}
+
+model TimetableEntry {
+
+    id String @id @default(cuid())
+    userId String
+    user User @relation(fields: [userId],references: [id])
+
+
+
+  courseName  String
+  courseCode  String
+  instructor  String
+  dayOfWeek   String   
+  startTime   String   
+  endTime     String  
+  room        String
+  type        String   
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+
+ @@index([userId,dayOfWeek])
+}
+
+
+enum Role{
+    STUDENT
+    TEACHER
+    ADMIN
+}
