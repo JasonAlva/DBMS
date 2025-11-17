@@ -25,10 +25,15 @@ SECRET_KEY = os.getenv("SECRET_KEY", "11243543")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+origins = [
+    "http://localhost:5173",
+    "http://localhost:3000"
+    #
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],    
@@ -107,7 +112,7 @@ async def register(user:UserCreate):
     return {"token":token ,  "user": {"id": new_user.id, "email": new_user.email, "name": new_user.name, "role": new_user.role}}
 
 
-@app.post("api/auth?login")
+@app.post("/api/auth/login")
 async def login(credentials:UserLogin):
     new_user= await db.user.find_unique(where={"email":credentials.email})
     if not new_user or not pwd_context.verify(credentials.password,new_user.password):
