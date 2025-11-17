@@ -19,19 +19,40 @@ import {
   MapPin,
   User,
 } from "lucide-react";
+import type { S } from "node_modules/tailwindcss/dist/types-WlZgYgM8.d.mts";
 
 const API_URL = "http://localhost:8000/api";
 
 interface Message {
   role: string;
-  content: string;  
+  content: string;
+}
+
+interface TimeTable {
+  userId: string;
+  courseName: string;
+  courseCode: string;
+  instructor: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  room: string;
+  type: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+
+  role: string;
+  name: string;
 }
 
 export default function CollegeTimetableApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState("");
-  const [user, setUser] = useState(null);
-  const [timetable, setTimetable] = useState([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [timetable, setTimetable] = useState<TimeTable[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputQuery, setInputQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -194,4 +215,84 @@ export default function CollegeTimetableApp() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
   };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">
+              College Query System
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAuth} className="space-y-4">
+              {authMode === "register" && (
+                <Input
+                  placeholder="Full Name"
+                  value={authForm.name}
+                  onChange={(e) =>
+                    setAuthForm({ ...authForm, name: e.target.value })
+                  }
+                  required
+                />
+              )}
+              <Input
+                type="email"
+                placeholder="Email"
+                value={authForm.email}
+                onChange={(e) =>
+                  setAuthForm({ ...authForm, email: e.target.value })
+                }
+                required
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={authForm.password}
+                onChange={(e) =>
+                  setAuthForm({ ...authForm, password: e.target.value })
+                }
+                required
+              />
+              <Button type="submit" className="w-full">
+                {authMode === "login" ? "Login" : "Register"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() =>
+                  setAuthMode(authMode === "login" ? "register" : "login")
+                }
+              >
+                {authMode === "login"
+                  ? "Need an account? Register"
+                  : "Have an account? Login"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const daysOrder = [
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+    "SUNDAY",
+  ];
+
+  const groupedTimetable = timetable.reduce<Record<string, TimeTable[]>>(
+    (acc, entry) => {
+      if (!acc[entry.dayOfWeek]) acc[entry.dayOfWeek] = [];
+      acc[entry.dayOfWeek].push(entry);
+      return acc;
+    },
+    {}
+  );
 }
