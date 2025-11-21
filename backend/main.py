@@ -14,7 +14,7 @@ import os
 
 
 app = FastAPI(title="College Query System")
-db=Prisma()
+db = Prisma()
 security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 os.environ["GOOGLE_API_KEY"]=os.getenv("GOOGLE_API_KEY")
@@ -142,7 +142,11 @@ async def create_timetable_entry(entry:TimeTableEntry, current_user=Depends(get_
 
 @app.get("/api/timetable")
 async def get_timetable(current_user=Depends(get_user_token)):
-        entries=await db.timetableentry.find_many(where={'userId':current_user.id},order={'dayOfWeek':'asc'})
+        # Admins can see all timetable entries; others only see their own
+        if getattr(current_user, "role", "").upper() == "ADMIN":
+            entries = await db.timetableentry.find_many(order={"dayOfWeek": "asc"})
+        else:
+            entries = await db.timetableentry.find_many(where={"userId": current_user.id}, order={"dayOfWeek": "asc"})
         return entries
 
 
