@@ -17,7 +17,7 @@ export default function DashboardLayout({
         <header className="border-b bg-white px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-semibold">Dashboard</h2>
-            <div className="text-sm text-muted-foreground">Role: {role}</div>
+            <div className="text-sm text-muted-foreground"> {role}</div>
           </div>
           <div>{/* Placeholder for top-right controls */}</div>
         </header>

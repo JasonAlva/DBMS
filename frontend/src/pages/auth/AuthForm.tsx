@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/auth/AuthContext";
 import {
   Select,
   SelectContent,
@@ -10,14 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = "http://localhost:8000/api";
 
-export default function AuthForm({
-  onAuthSuccess,
-}: {
-  onAuthSuccess: (data: { token: string; user: any }) => void;
-}) {
+export default function AuthForm() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
   const [authMode, setAuthMode] = useState("login");
   const [authForm, setAuthForm] = useState({
     email: "",
@@ -39,13 +40,11 @@ export default function AuthForm({
       if (!response.ok) throw new Error("Authentication failed");
 
       const data = await response.json();
-      onAuthSuccess(data);
+
+      login(data); // store token & user globally
+      navigate("/", { replace: true });
     } catch (error) {
-      if (error instanceof Error) {
-        alert("Authentication failed: " + error.message);
-      } else {
-        alert("unknown error");
-      }
+      alert("Authentication failed");
     }
   };
 
