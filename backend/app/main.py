@@ -11,13 +11,26 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 import os
+from pathlib import Path 
+from dotenv import load_dotenv 
+
+
+current_dir = Path(__file__).resolve().parent 
+root_dir = current_dir.parent
+env_path = root_dir / ".env"
+
+load_dotenv(dotenv_path=env_path)
 
 
 app = FastAPI(title="College Query System")
-db = Prisma()
+
 security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 os.environ["GOOGLE_API_KEY"]=os.getenv("GOOGLE_API_KEY")
+
+
+
+db = Prisma()
 
 
 # JWT Config

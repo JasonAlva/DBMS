@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+prisma==0.15.0
+python-dotenv
+python-multipart
+pydantic
+pydantic-settings
+passlib[bcrypt]
+python-jose
+langchain
+langchain-core
+langchain-google-genai
+typing_extensions
+requests
+psycopg2-binary

@@ -185,17 +185,17 @@ export default function TimetablePanel({ role }: { role?: string }) {
   const isAdmin = (role || "").toLowerCase() === "admin";
 
   return (
-    <Card className="w-full h-full min-h-[520px]">
+    <Card className="w-full h-screen ">
       <CardHeader>
         <CardTitle>My Timetable</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="overflow-auto">
+        <div className="flex flex-col h-full space-y-4 border-4">
           <div
             className={
               isAdmin
-                ? "grid grid-cols-1 md:grid-cols-2 gap-4"
-                : "grid grid-cols-1 gap-4"
+                ? "grid grid-rows-1 md:grid-rows-2 gap-4"
+                : "grid grid-rows-1 gap-4 "
             }
           >
             <div className="space-y-2">

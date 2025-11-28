@@ -1,6 +1,6 @@
 datasource db {
   provider = "postgresql"
-  
+  url  = env("DATABASE_URL")
 }
 
 generator client {
@@ -8,46 +8,239 @@ generator client {
 }
 
 model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    id String @id @default(cuid())
-    email String @unique
-    password String 
-    role Role 
-    name String
-    createdAt DateTime @default(now())
+  studentProfile Student?
+  teacherProfile Teacher?
+  adminProfile   Admin?
 
-    timetableEntries TimetableEntry[]
+  chatMessages ChatMessage[]
 
-
+  @@index([email])
+  @@index([role])
 }
 
-model TimetableEntry {
 
-    id String @id @default(cuid())
-    userId String
-    user User @relation(fields: [userId],references: [id])
+model Student {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId       String    @unique 
+  department      String
+  semester        Int
+  batch           String
+  phoneNumber     String?
+  address         String?
+  dateOfBirth     DateTime?
+  guardianName    String?
+  guardianContact String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  enrollments     Enrollment[]
+  attendances     Attendance[]
+  @@index([studentId])
+  @@index([department, semester])
+  @@index([batch])
+}
 
+model Teacher {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teacherId       String    @unique // e.g., "TCH2024001"
+  department      String
+  designation     String
+  specialization  String?
+  phoneNumber     String?
+  officeRoom      String?
+  officeHours     String?
+  joiningDate     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  coursesTeaching Course[]
+  schedules       Schedule[]
+  attendanceMarked Attendance[]
+  @@index([teacherId])
+  @@index([department])
+}
 
+model Admin {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminId   String     @unique
 
-  courseName  String
-  courseCode  String
-  instructor  String
-  dayOfWeek   String   
-  startTime   String   
-  endTime     String  
-  room        String
-  type        String   
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  @@index([adminId])
+}
 
+model Department {
+  id          String   @id @default(cuid())
+  code        String   @unique // e.g., "CSE", "ECE"
+  name        String
+  description String?
+  hodName     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-
- @@index([userId,dayOfWeek])
+  courses     Course[]
+  @@index([code])
+}
+model Enrollment {
+  id          String           @id @default(cuid())
+  studentId   String
+  student     Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrolledAt  DateTime         @default(now())
+  status      EnrollmentStatus @default(ACTIVE)
+  grade       String?
+  gradePoints Float?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([status])
 }
 
 
-enum Role{
-    STUDENT
-    TEACHER
-    ADMIN
+model Course {
+  id            String      @id @default(cuid())
+  courseCode    String      @unique // e.g., "CS101"
+  courseName    String
+  credits       Int
+  departmentId  String
+  department    Department  @relation(fields: [departmentId], references: [id])
+  semester      Int
+  description   String?     @db.Text
+  syllabus      String?     @db.Text
+  maxStudents   Int?
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  teacherId     String?
+  teacher       Teacher?    @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  enrollments   Enrollment[]
+  schedules     Schedule[]
+  attendances   Attendance[]
+  @@index([courseCode])
+  @@index([departmentId, semester])
+  @@index([teacherId])
+  @@index([isActive])
 }
+
+
+model Schedule {
+  id            String    @id @default(cuid())
+  courseId      String
+  course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacherId     String
+  teacher       Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  dayOfWeek     DayOfWeek
+  startTime     String
+  endTime       String
+  room          String
+  building      String?
+  type          ClassType @default(LECTURE)
+  isActive      Boolean   @default(true)
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+  notes         String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  @@index([courseId])
+  @@index([teacherId])
+  @@index([dayOfWeek, startTime])
+  @@index([isActive])
+  @@index([effectiveFrom, effectiveTo])
+}
+
+model Attendance {
+  id          String           @id @default(cuid())
+  studentId   String
+  student     Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  markedById  String
+  markedBy    Teacher          @relation(fields: [markedById], references: [id], onDelete: Cascade)
+  date        DateTime
+  status      AttendanceStatus
+  remarks     String?          @db.Text
+  markedAt    DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  @@unique([studentId, courseId, date])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([date])
+  @@index([status])
+  @@index([markedById])
+}
+
+model ChatMessage {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        ChatRole
+  content     String    @db.Text
+  metadata    Json?
+  threadId    String?
+  parentId    String?
+  tokensUsed  Int?
+  responseTime Float?
+  createdAt   DateTime  @default(now())
+  @@index([userId])
+  @@index([threadId])
+  @@index([createdAt])
+  @@index([role])
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum ClassType {
+  LECTURE
+  LAB
+  
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+  FAILED
+  WITHDRAWN
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+  MEDICAL_LEAVE
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
