@@ -1,6 +1,6 @@
 from typing import List, Optional
 from prisma import Prisma
-from models.schemas import EnrollmentCreate, EnrollmentUpdate, EnrollmentResponse
+from src.models.schemas import EnrollmentCreate, EnrollmentUpdate, EnrollmentResponse
 
 
 class EnrollmentService:

@@ -1,6 +1,6 @@
 from typing import List, Optional
 from prisma import Prisma
-from models.schemas import UserCreate, UserUpdate, UserOut
+from src.models.schemas import UserCreate, UserUpdate, UserOut
 
 class UserService:
     def __init__(self, db: Prisma):

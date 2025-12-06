@@ -1,6 +1,7 @@
 from typing import List, Optional
 from prisma import Prisma
-from models.schemas import TeacherCreate, TeacherUpdate, Teacher
+from src.models.schemas import TeacherCreate, TeacherUpdate
+from prisma.models import Teacher
 
 class TeacherService:
     def __init__(self, db: Prisma):

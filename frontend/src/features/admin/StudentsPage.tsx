@@ -26,37 +26,56 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconPlus, IconSearch, IconEye, IconEdit } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import { studentService, type Student } from "@/services/studentService";
+import { toast } from "sonner";
 
 export default function StudentsPage() {
-  const students = [
-    {
-      id: 1,
-      name: "Alice Johnson",
-      email: "alice@example.com",
-      department: "Computer Science",
-      year: "3rd Year",
-      gpa: "3.85",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Bob Smith",
-      email: "bob@example.com",
-      department: "Electrical Engineering",
-      year: "2nd Year",
-      gpa: "3.60",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "Carol Williams",
-      email: "carol@example.com",
-      department: "Mechanical Engineering",
-      year: "4th Year",
-      gpa: "3.92",
-      status: "Active",
-    },
-  ];
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [semesterFilter, setSemesterFilter] = useState("all");
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+      const data = await studentService.getAll();
+      setStudents(data);
+    } catch (error) {
+      toast.error("Failed to fetch students", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredStudents = students.filter((student) => {
+    const matchesSearch =
+      student.user?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.user?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.studentId.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDepartment =
+      departmentFilter === "all" || student.department === departmentFilter;
+    const matchesSemester =
+      semesterFilter === "all" ||
+      student.semester.toString() === semesterFilter;
+
+    return matchesSearch && matchesDepartment && matchesSemester;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <p>Loading students...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-6 lg:p-8">
@@ -76,29 +95,39 @@ export default function StudentsPage() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
           <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search students..." className="pl-8" />
+          <Input
+            placeholder="Search students..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        <Select>
+        <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Department" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Departments</SelectItem>
-            <SelectItem value="cs">Computer Science</SelectItem>
-            <SelectItem value="ee">Electrical Engineering</SelectItem>
-            <SelectItem value="me">Mechanical Engineering</SelectItem>
+            <SelectItem value="Computer Science">Computer Science</SelectItem>
+            <SelectItem value="Electrical Engineering">
+              Electrical Engineering
+            </SelectItem>
+            <SelectItem value="Mechanical Engineering">
+              Mechanical Engineering
+            </SelectItem>
           </SelectContent>
         </Select>
-        <Select>
+        <Select value={semesterFilter} onValueChange={setSemesterFilter}>
           <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Year" />
+            <SelectValue placeholder="Semester" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Years</SelectItem>
-            <SelectItem value="1">1st Year</SelectItem>
-            <SelectItem value="2">2nd Year</SelectItem>
-            <SelectItem value="3">3rd Year</SelectItem>
-            <SelectItem value="4">4th Year</SelectItem>
+            <SelectItem value="all">All Semesters</SelectItem>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+              <SelectItem key={sem} value={sem.toString()}>
+                Semester {sem}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -107,7 +136,8 @@ export default function StudentsPage() {
         <CardHeader>
           <CardTitle>All Students</CardTitle>
           <CardDescription>
-            A comprehensive list of all enrolled students
+            A comprehensive list of all enrolled students (
+            {filteredStudents.length})
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -115,63 +145,65 @@ export default function StudentsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Student</TableHead>
+                <TableHead>Student ID</TableHead>
                 <TableHead>Department</TableHead>
-                <TableHead>Year</TableHead>
-                <TableHead>GPA</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Semester</TableHead>
+                <TableHead>Batch</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {students.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage
-                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.email}`}
-                        />
-                        <AvatarFallback>
-                          {student.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{student.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {student.email}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{student.department}</TableCell>
-                  <TableCell>{student.year}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        parseFloat(student.gpa) >= 3.7 ? "default" : "secondary"
-                      }
-                    >
-                      {student.gpa}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{student.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon">
-                        <IconEye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <IconEdit className="h-4 w-4" />
-                      </Button>
-                    </div>
+              {filteredStudents.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    No students found
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredStudents.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage
+                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.user?.email}`}
+                          />
+                          <AvatarFallback>
+                            {student.user?.name
+                              ?.split(" ")
+                              .map((n: string) => n[0])
+                              .join("") || "??"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">
+                            {student.user?.name || "N/A"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {student.user?.email || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{student.studentId}</Badge>
+                    </TableCell>
+                    <TableCell>{student.department}</TableCell>
+                    <TableCell>{student.semester}</TableCell>
+                    <TableCell>{student.batch}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon">
+                          <IconEye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <IconEdit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -1,7 +1,7 @@
 from typing import List, Optional
 from prisma import Prisma
-from models.schemas import DepartmentCreate, DepartmentUpdate, Department
-
+from src.models.schemas import DepartmentCreate, DepartmentUpdate
+from prisma.models import Department
 class DepartmentService:
     def __init__(self, db: Prisma):
         self.db = db

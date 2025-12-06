@@ -5,7 +5,7 @@ from src.models.schemas import AdminCreate, AdminUpdate, AdminOut
 from src.utils.password import hash_password
 
 class AdminService:
-    def __init__(self, db: db):
+    def __init__(self, db: Prisma):
         self.db = db
 
     async def create_admin(self, admin_data: AdminCreate) -> AdminOut:

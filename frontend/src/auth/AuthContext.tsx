@@ -7,11 +7,16 @@ interface User {
   name: string;
 }
 
+interface LoginResponse {
+  access_token: string;
+  token_type: string;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (data: { token: string; user: User }) => void;
+  login: (data: LoginResponse & { user?: User }) => void;
   logout: () => void;
 }
 
@@ -34,12 +39,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(false);
   }, []);
 
-  const login = (data: { token: string; user: User }) => {
-    setToken(data.token);
-    setUser(data.user);
+  const login = (data: LoginResponse & { user?: User }) => {
+    setToken(data.access_token);
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    // If user data is provided, use it; otherwise, decode from token or fetch from API
+    if (data.user) {
+      setUser(data.user);
+      localStorage.setItem("user", JSON.stringify(data.user));
+    }
+
+    localStorage.setItem("token", data.access_token);
   };
 
   const logout = () => {

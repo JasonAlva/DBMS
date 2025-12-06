@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from src.models.schemas import CourseCreate, CourseUpdate, Course
+from src.models.schemas import CourseCreate, CourseUpdate
+from prisma.models import Course
 from src.services.course_service import CourseService
 from src.config.database import prisma
 

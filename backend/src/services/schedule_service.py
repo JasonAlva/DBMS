@@ -1,6 +1,6 @@
 from typing import List, Optional
 from prisma import Prisma
-from models.schemas import ScheduleCreate, ScheduleUpdate, ScheduleResponse
+from src.models.schemas import ScheduleCreate, ScheduleUpdate, ScheduleResponse
 
 class ScheduleService:
     def __init__(self, db: Prisma):

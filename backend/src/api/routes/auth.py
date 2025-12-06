@@ -1,26 +1,31 @@
 from fastapi import APIRouter, HTTPException, Depends
-from src.models.schemas import UserLogin, UserRegister
+from src.models.schemas import UserLogin, UserRegister, TokenResponse, UserOut
 from src.services.auth_service import AuthService
 from src.api.dependencies import get_current_user
+from src.config.database import prisma
 
 router = APIRouter()
 
-@router.post("/login")
+@router.post("/login", response_model=TokenResponse)
 async def login(user: UserLogin):
-    authenticated_user = await AuthService.authenticate_user(user.email, user.password)
+    auth_service = AuthService(prisma)
+    authenticated_user = await auth_service.authenticate_user(user.email, user.password)
     if not authenticated_user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    token = AuthService.create_access_token(user.email)
-    return {"access_token": token, "token_type": "bearer"}
+    token = auth_service.create_access_token(user.email)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": authenticated_user
+    }
 
-@router.post("/register")
+@router.post("/register", response_model=UserOut)
 async def register(user: UserRegister):
-    new_user = await AuthService.createUser(user)
-    if not new_user:
-        raise HTTPException(status_code=400, detail="User registration failed")
-    return {"message": "User registered successfully", "user": new_user}
+    auth_service = AuthService(prisma)
+    new_user = await auth_service.createUser(user)
+    return new_user
 
-@router.get("/me")
-async def read_users_me(current_user: str = Depends(get_current_user)):
+@router.get("/me", response_model=UserOut)
+async def read_users_me(current_user: UserOut = Depends(get_current_user)):
     return current_user

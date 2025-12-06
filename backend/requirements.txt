@@ -13,3 +13,4 @@ langchain-google-genai
 typing_extensions
 requests
 psycopg2-binary
+PyJWT==2.8.0

@@ -1,21 +1,21 @@
 from prisma import Prisma
 
 # Shared database instance
-db = Prisma()
+prisma = Prisma()
 
 async def get_db()->Prisma:
-    if not db.is_connected():
-        await db.connect()
-    return db
+    if not prisma.is_connected():
+        await prisma.connect()
+    return prisma
 
 async def connect_db():
     """Connect to the database"""
-    if not db.is_connected():
-        await db.connect()
+    if not prisma.is_connected():
+        await prisma.connect()
     print("✅ Database connected")
 
 async def disconnect_db():
     """Disconnect from the database"""
-    if db.is_connected():
-        await db.disconnect()
+    if prisma.is_connected():
+        await prisma.disconnect()
     print("❌ Database disconnected")

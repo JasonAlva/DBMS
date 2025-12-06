@@ -2,7 +2,7 @@ from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from prisma import Prisma
 from src.config.database import get_db
-from src.utils.jwt import decode_token
+from src.utils.jwt import verify_token
 from src.services.user_service import UserService
 from src.models.schemas import UserResponse
 
@@ -14,7 +14,7 @@ async def get_current_user(db:Prisma=Depends(get_db),credentials:HTTPAuthorizati
     token=credentials.credentials
 
     try:
-        payload=decode_token(token)
+        payload=verify_token(token)
         user_id=payload.get("sub")
 
         if user_id is None:

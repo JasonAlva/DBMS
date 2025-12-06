@@ -10,6 +10,23 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    
+    # Optional fields for Student
+    studentId: Optional[str] = None
+    department: Optional[str] = None
+    semester: Optional[int] = None
+    batch: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    address: Optional[str] = None
+    dateOfBirth: Optional[datetime] = None
+    
+    # Optional fields for Teacher
+    teacherId: Optional[str] = None
+    designation: Optional[str] = None
+    specialization: Optional[str] = None
+    officeRoom: Optional[str] = None
+    officeHours: Optional[str] = None
+    joiningDate: Optional[datetime] = None
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
@@ -19,12 +36,21 @@ class UserUpdate(BaseModel):
 
 class UserResponse(UserBase):
     id: str
-    created_at: datetime
-    updated_at: datetime
+    createdAt: datetime
+    updatedAt: datetime
     
     class Config:
         from_attributes = True
+class UserOut(BaseModel):
+    id: str
+    email: EmailStr
+    name: str
+    role: str
+    createdAt: datetime
+    updatedAt: datetime
 
+    class Config:
+        from_attributes = True
 # Student Schemas
 class StudentBase(BaseModel):
     student_id: str = Field(alias="studentId")
@@ -49,8 +75,8 @@ class StudentUpdate(BaseModel):
 class StudentResponse(StudentBase):
     id: str
     user_id: str = Field(alias="userId")
-    created_at: datetime
-    updated_at: datetime
+    createdAt: datetime
+    updatedAt: datetime
     
     class Config:
         from_attributes = True
@@ -82,8 +108,8 @@ class TeacherUpdate(BaseModel):
 class TeacherResponse(TeacherBase):
     id: str
     user_id: str = Field(alias="userId")
-    created_at: datetime
-    updated_at: datetime
+    createdAt: datetime
+    updatedAt: datetime
     
     class Config:
         from_attributes = True
@@ -102,12 +128,23 @@ class AdminUpdate(BaseModel):
 class AdminResponse(AdminBase):
     id: str
     user_id: str = Field(alias="userId")
-    created_at: datetime
-    updated_at: datetime
+    createdAt: datetime
+    updatedAt: datetime
     
     class Config:
         from_attributes = True
         populate_by_name = True
+
+class AdminOut(BaseModel):
+    id: str
+    adminId: str
+    userId: str
+    user: UserOut
+    createdAt: datetime
+    updatedAt: datetime
+
+    class Config:
+        from_attributes = True
 
 # Department Schemas
 class DepartmentBase(BaseModel):
@@ -116,19 +153,34 @@ class DepartmentBase(BaseModel):
     description: Optional[str] = None
     hod_name: Optional[str] = Field(None, alias="hodName")
 
-class DepartmentCreate(DepartmentBase):
-    pass
+class DepartmentSchema(BaseModel):
+    id: str
+    name: str
+    code: str
+    description: Optional[str] = None
+    headOfDepartment: Optional[str] = None
+    createdAt: datetime
+    updatedAt: datetime
+
+    class Config:
+        from_attributes = True
+
+class DepartmentCreate(BaseModel):
+    name: str
+    code: str
+    description: Optional[str] = None
+    headOfDepartment: Optional[str] = None
 
 class DepartmentUpdate(BaseModel):
-    code: Optional[str] = None
     name: Optional[str] = None
+    code: Optional[str] = None
     description: Optional[str] = None
-    hod_name: Optional[str] = Field(None, alias="hodName")
+    headOfDepartment: Optional[str] = None
 
 class DepartmentResponse(DepartmentBase):
     id: str
-    created_at: datetime
-    updated_at: datetime
+    createdAt: datetime
+    updatedAt: datetime
     
     class Config:
         from_attributes = True
@@ -162,8 +214,8 @@ class CourseUpdate(BaseModel):
 
 class CourseResponse(CourseBase):
     id: str
-    created_at: datetime
-    updated_at: datetime
+    createdAt: datetime
+    updatedAt: datetime
     
     class Config:
         from_attributes = True
@@ -233,8 +285,8 @@ class ScheduleUpdate(BaseModel):
 
 class ScheduleResponse(ScheduleBase):
     id: str
-    created_at: datetime
-    updated_at: datetime
+    createdAt: datetime
+    updatedAt: datetime
     
     class Config:
         from_attributes = True
@@ -249,18 +301,86 @@ class AttendanceBase(BaseModel):
     status: str
     remarks: Optional[str] = None
 
-class AttendanceCreate(AttendanceBase):
-    pass
+class StudentOut(BaseModel):
+    id: str
+    userId: str
+    studentId: str
+    department: str
+    semester: int
+    batch: str
+    phoneNumber: Optional[str] = None
+    address: Optional[str] = None
+    dateOfBirth: Optional[datetime] = None
+    createdAt: datetime
+    updatedAt: datetime
+    user: Optional[UserOut] = None
+
+    class Config:
+        from_attributes = True
+
+class TeacherOut(BaseModel):
+    id: str
+    userId: str
+    teacherId: str
+    department: str
+    designation: str
+    specialization: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    officeRoom: Optional[str] = None
+    officeHours: Optional[str] = None
+    joiningDate: Optional[datetime] = None
+    createdAt: datetime
+    updatedAt: datetime
+    user: Optional[UserOut] = None
+
+    class Config:
+        from_attributes = True
+
+class CourseOut(BaseModel):
+    id: str
+    courseCode: str
+    courseName: str
+    credits: int
+    departmentId: str
+    semester: int
+    description: Optional[str] = None
+    syllabus: Optional[str] = None
+    maxStudents: Optional[int] = None
+    isActive: bool
+    teacherId: Optional[str] = None
+    createdAt: datetime
+    updatedAt: datetime
+
+    class Config:
+        from_attributes = True
+
+class AttendanceRead(BaseModel):
+    id: str
+    studentId: str
+    courseId: str
+    markedById: str
+    date: datetime
+    status: str
+    student: Optional[StudentOut] = None
+    course: Optional[CourseOut] = None
+    markedBy: Optional[TeacherOut] = None
+
+    class Config:
+        from_attributes = True
+class AttendanceCreate(BaseModel):
+    studentId: str
+    courseId: str
+    date: datetime
+    status: str
 
 class AttendanceUpdate(BaseModel):
     status: Optional[str] = None
-    remarks: Optional[str] = None
     date: Optional[datetime] = None
 
 class AttendanceResponse(AttendanceBase):
     id: str
-    created_at: datetime
-    updated_at: datetime
+    createdAt: datetime
+    updatedAt: datetime
     
     class Config:
         from_attributes = True
@@ -286,7 +406,7 @@ class ChatMessageUpdate(BaseModel):
 
 class ChatMessageResponse(ChatMessageBase):
     id: str
-    created_at: datetime = Field(alias="createdAt")
+    createdAt: datetime = Field(alias="createdAt")
     
     class Config:
         from_attributes = True
@@ -305,3 +425,35 @@ class TokenData(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    role: str  # "STUDENT", "TEACHER", or "ADMIN"
+    
+    # Optional fields for Student
+    studentId: Optional[str] = None
+    department: Optional[str] = None
+    semester: Optional[int] = None
+    batch: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    address: Optional[str] = None
+    dateOfBirth: Optional[datetime] = None
+    
+    # Optional fields for Teacher
+    teacherId: Optional[str] = None
+    designation: Optional[str] = None
+    specialization: Optional[str] = None
+    officeRoom: Optional[str] = None
+    officeHours: Optional[str] = None
+    joiningDate: Optional[datetime] = None
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut

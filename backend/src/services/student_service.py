@@ -1,6 +1,7 @@
 from typing import List, Optional
 from prisma import Prisma
-from models.schemas import StudentCreate, StudentUpdate, Student as StudentModel
+from src.models.schemas import StudentCreate, StudentUpdate
+from prisma.models import Student as StudentModel
 
 class StudentService:
     def __init__(self, db: Prisma):
