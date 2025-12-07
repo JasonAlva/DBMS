@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -17,23 +23,36 @@ import type {
 
 export default function TimeTablesPage() {
   const [allTimeTables, setAllTimeTables] = useState<FullTimeTable>([]);
-  const [timeTable, setTimeTable] = useState<TimeTableType>(emptyTimeTableDetails);
+  const [timeTable, setTimeTable] = useState<TimeTableType>(
+    emptyTimeTableDetails
+  );
   const [currentSemester, setCurrentSemester] = useState(0);
   const [currentSection, setCurrentSection] = useState(0);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [timeTableStructure, setTimeTableStructure] = useState<TimeTableStructure>({
-    breaksPerSemester: [[4, 5], [5], [5], [5]],
-    periodCount: 9,
-    sectionsPerSemester: [0, 0, 0, 0],
-    semesterCount: 3,
-    dayCount: 5,
-  });
-  const [dayNames, setDayNames] = useState<string[]>(["Mon", "Tue", "Wed", "Thu", "Fri"]);
+  const [timeTableStructure, setTimeTableStructure] =
+    useState<TimeTableStructure>({
+      breaksPerSemester: [[4, 5], [5], [5], [5]],
+      periodCount: 9,
+      sectionsPerSemester: [0, 0, 0, 0],
+      semesterCount: 3,
+      dayCount: 5,
+    });
+  const [dayNames, setDayNames] = useState<string[]>([
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+  ]);
   const [showSelector, setShowSelector] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<[number, number] | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<[number, number] | null>(
+    null
+  );
   const [fillManually, setFillManually] = useState(true);
-  const [subjectsDetails, setSubjectsDetails] = useState<SubjectsDetailsList>({});
+  const [subjectsDetails, setSubjectsDetails] = useState<SubjectsDetailsList>(
+    {}
+  );
 
   // Load initial data
   useEffect(() => {
@@ -48,19 +67,27 @@ export default function TimeTablesPage() {
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      const [structure, schedules, subjects] = await Promise.all([
-        timetableService.getTimeTableStructure(),
-        timetableService.getSchedule(),
-        timetableService.getSubjectsDetailsList(),
-      ]);
+      // Load schedules - structure will be derived from data
+      const schedules = await timetableService.getSchedule();
+      setAllTimeTables(schedules || []);
 
-      setTimeTableStructure(structure);
-      setAllTimeTables(schedules);
-      setSubjectsDetails(subjects);
+      // Load subjects/courses for display
+      const courses = await timetableService.getSubjectsDetailsList();
+      setSubjectsDetails(courses || {});
+
+      // Set default structure - can be made configurable later
+      const defaultStructure: TimeTableStructure = {
+        breaksPerSemester: [[4, 5], [5], [5], [5]],
+        periodCount: 9,
+        sectionsPerSemester: [2, 2, 2, 2],
+        semesterCount: 4,
+        dayCount: 5,
+      };
+      setTimeTableStructure(defaultStructure);
 
       // Calculate day names based on structure
       const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-      const calculatedDays = weekDays.slice(0, structure.dayCount);
+      const calculatedDays = weekDays.slice(0, defaultStructure.dayCount);
       setDayNames(calculatedDays);
     } catch (error) {
       console.error("Failed to load timetable data:", error);
@@ -94,7 +121,7 @@ export default function TimeTablesPage() {
 
     const [dayIndex, periodIndex] = selectedPeriod;
     const newTimeTable: TimeTableType = [...timeTable];
-    
+
     if (!newTimeTable[dayIndex]) {
       newTimeTable[dayIndex] = [];
     }
@@ -131,11 +158,6 @@ export default function TimeTablesPage() {
     }
   };
 
-  const handleRefresh = useCallback(() => {
-    loadInitialData();
-    toast.success("Timetable refreshed");
-  }, []);
-
   if (loading) {
     return (
       <div className="p-6 space-y-4">
@@ -145,7 +167,8 @@ export default function TimeTablesPage() {
     );
   }
 
-  const currentSectionsCount = timeTableStructure.sectionsPerSemester[currentSemester] || 0;
+  const currentSectionsCount =
+    timeTableStructure.sectionsPerSemester[currentSemester] || 0;
 
   return (
     <div className="p-6 space-y-6">
@@ -186,7 +209,9 @@ export default function TimeTablesPage() {
               subjectsDetails={subjectsDetails}
               details={timeTable}
               periodClickHandler={handlePeriodClick}
-              breakTimeIndexs={timeTableStructure.breaksPerSemester[currentSemester] || []}
+              breakTimeIndexs={
+                timeTableStructure.breaksPerSemester[currentSemester] || []
+              }
               noOfPeriods={timeTableStructure.periodCount}
               dayNames={dayNames}
             />
