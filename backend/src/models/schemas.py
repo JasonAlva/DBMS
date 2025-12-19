@@ -495,3 +495,35 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+# Timetable Schemas
+class PeriodDetails(BaseModel):
+    teacher: str
+    subject: str
+    room: str
+
+class DaySchedule(BaseModel):
+    periods: List[Optional[PeriodDetails]]
+
+class TimeTableType(BaseModel):
+    days: List[Optional[DaySchedule]]
+
+class FullTimeTable(BaseModel):
+    semesters: List[List[TimeTableType]]
+
+class SubjectDetails(BaseModel):
+    subjectName: str
+    teacherName: str
+    roomCodes: List[str]
+    color: Optional[str] = None
+
+class SubjectsDetailsList(BaseModel):
+    subjects: dict
+
+class SaveScheduleRequest(BaseModel):
+    semester: int
+    section: int
+    timetable: List[List[Optional[List[str]]]]
+
+class GenerateTimeTableRequest(BaseModel):
+    pass

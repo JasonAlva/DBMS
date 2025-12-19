@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Calendar, AlertCircle } from "lucide-react";
-import { timetableService } from "./timetableService";
+import { timetableService } from "../../services/timeTableService";
 import TimeTable, { emptyTimeTableDetails } from "./TimeTableGrid";
 import { TimetableControls, SemesterTabs } from "./TimetableControls";
 import TeacherSubjectSelector from "./TeacherSubjectSelector";
@@ -69,10 +69,12 @@ export default function TimeTablesPage() {
     try {
       // Load schedules - structure will be derived from data
       const schedules = await timetableService.getSchedule();
+      console.log("Loaded schedules:", schedules);
       setAllTimeTables(schedules || []);
 
       // Load subjects/courses for display
       const courses = await timetableService.getSubjectsDetailsList();
+      console.log("Loaded courses:", courses);
       setSubjectsDetails(courses || {});
 
       // Set default structure - can be made configurable later
@@ -204,7 +206,7 @@ export default function TimeTablesPage() {
           />
 
           {/* Timetable */}
-          {timeTable && Object.keys(subjectsDetails).length > 0 ? (
+          {timeTable && timeTable.length > 0 ? (
             <TimeTable
               subjectsDetails={subjectsDetails}
               details={timeTable}
@@ -219,8 +221,13 @@ export default function TimeTablesPage() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                No timetable found for Year {currentSemester + 1} Section{" "}
-                {String.fromCharCode(65 + currentSection)}
+                {Object.keys(subjectsDetails).length === 0
+                  ? "No courses found. Please add courses first."
+                  : `No timetable found for Year ${
+                      currentSemester + 1
+                    } Section ${String.fromCharCode(
+                      65 + currentSection
+                    )}. Click 'Auto Fill' to generate or 'Fill Manually' to create one.`}
               </AlertDescription>
             </Alert>
           )}

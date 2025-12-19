@@ -18,8 +18,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 def verify_token(token: str) -> Dict[str, Any]:
+    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+      
         
         if payload.get("sub") is None:
             raise HTTPException(
@@ -27,7 +29,7 @@ def verify_token(token: str) -> Dict[str, Any]:
                 detail="Invalid token: subject missing",
             )
 
-        return payload  # Return the full payload instead of just email
+        return payload  
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(

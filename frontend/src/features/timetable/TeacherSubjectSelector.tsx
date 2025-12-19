@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { User, BookOpen } from "lucide-react";
-import { timetableService } from "./timetableService";
+import { timetableService } from "../../services/timeTableService";
 import type { Teacher, Subject } from "./types";
 
 interface TeacherSubjectSelectorProps {

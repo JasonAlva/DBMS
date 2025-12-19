@@ -12,11 +12,15 @@ security =HTTPBearer()
 
 async def get_current_user(db:Prisma=Depends(get_db),credentials:HTTPAuthorizationCredentials=Depends(security)):
     token=credentials.credentials
-
+   
+    
     try:
+       
         payload=verify_token(token)
         user_id=payload.get("sub")
-        print(user_id)
+    
+       
+        
 
         if user_id is None:
             raise HTTPException(
