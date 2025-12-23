@@ -11,8 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Calendar, AlertCircle } from "lucide-react";
 import { timetableService } from "../../services/timeTableService";
+import { useDepartmentService } from "../../services/departmentService";
 import TimeTable, { emptyTimeTableDetails } from "./TimeTableGrid";
-import { TimetableControls, SemesterTabs } from "./TimetableControls";
+import { YearTabs, TimetableControls } from "./TimetableControls";
 import TeacherSubjectSelector from "./TeacherSubjectSelector";
 import type {
   TimeTableType,
@@ -22,20 +23,34 @@ import type {
 } from "./types";
 
 export default function TimeTablesPage() {
+  const departmentService = useDepartmentService();
+
   const [allTimeTables, setAllTimeTables] = useState<FullTimeTable>([]);
   const [timeTable, setTimeTable] = useState<TimeTableType>(
     emptyTimeTableDetails
   );
-  const [currentSemester, setCurrentSemester] = useState(0);
-  const [currentSection, setCurrentSection] = useState(0);
+  const [currentYear, setCurrentYear] = useState(0); // 0-3 for 1st-4th year
+  const [currentSemester, setCurrentSemester] = useState(0); // 0-1 for sem 1-2 within a year
+  const [departments, setDepartments] = useState<
+    Array<{ id: string; name: string; code: string }>
+  >([]);
+  const [currentDepartment, setCurrentDepartment] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [timeTableStructure, setTimeTableStructure] =
     useState<TimeTableStructure>({
-      breaksPerSemester: [[4, 5], [5], [5], [5]],
-      periodCount: 9,
-      sectionsPerSemester: [0, 0, 0, 0],
-      semesterCount: 3,
+      breaksPerSemester: [
+        [2, 5],
+        [2, 5],
+        [2, 5],
+        [2, 5],
+        [2, 5],
+        [2, 5],
+        [2, 5],
+        [2, 5],
+      ],
+      periodCount: 8,
+      sectionsPerSemester: [2, 2, 2, 2, 2, 2, 2, 2],
+      semesterCount: 8,
       dayCount: 5,
     });
   const [dayNames, setDayNames] = useState<string[]>([
@@ -49,24 +64,36 @@ export default function TimeTablesPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<[number, number] | null>(
     null
   );
-  const [fillManually, setFillManually] = useState(true);
   const [subjectsDetails, setSubjectsDetails] = useState<SubjectsDetailsList>(
     {}
   );
+
+  // Calculate absolute semester index (0-7) from year and semester
+  const absoluteSemester = currentYear * 2 + currentSemester;
 
   // Load initial data
   useEffect(() => {
     loadInitialData();
   }, []);
 
-  // Update current timetable when semester/section changes
+  // Update current timetable when year/semester/department changes
   useEffect(() => {
     updateCurrentTimeTable();
-  }, [currentSemester, currentSection, allTimeTables]);
+  }, [currentYear, currentSemester, currentDepartment, allTimeTables]);
 
   const loadInitialData = async () => {
     setLoading(true);
     try {
+      // Load departments
+      const depts = await departmentService.getAll();
+      console.log("Loaded departments:", depts);
+      setDepartments(depts || []);
+
+      // Set first department as default if available
+      if (depts && depts.length > 0) {
+        setCurrentDepartment(depts[0].id);
+      }
+
       // Load schedules - structure will be derived from data
       const schedules = await timetableService.getSchedule();
       console.log("Loaded schedules:", schedules);
@@ -77,12 +104,21 @@ export default function TimeTablesPage() {
       console.log("Loaded courses:", courses);
       setSubjectsDetails(courses || {});
 
-      // Set default structure - can be made configurable later
+      // Set default structure for 4 years (8 semesters)
       const defaultStructure: TimeTableStructure = {
-        breaksPerSemester: [[4, 5], [5], [5], [5]],
-        periodCount: 9,
-        sectionsPerSemester: [2, 2, 2, 2],
-        semesterCount: 4,
+        breaksPerSemester: [
+          [2, 5],
+          [2, 5],
+          [2, 5],
+          [2, 5],
+          [2, 5],
+          [2, 5],
+          [2, 5],
+          [2, 5],
+        ],
+        periodCount: 8,
+        sectionsPerSemester: [2, 2, 2, 2, 2, 2, 2, 2],
+        semesterCount: 8,
         dayCount: 5,
       };
       setTimeTableStructure(defaultStructure);
@@ -101,8 +137,12 @@ export default function TimeTablesPage() {
 
   const updateCurrentTimeTable = useCallback(() => {
     try {
-      if (allTimeTables?.[currentSemester]?.[currentSection]) {
-        setTimeTable(allTimeTables[currentSemester][currentSection]);
+      // Calculate absolute semester index (0-7)
+      const semIndex = currentYear * 2 + currentSemester;
+      // For now, using section 0 as default
+      // TODO: Filter by department when backend supports it
+      if (allTimeTables?.[semIndex]?.[0]) {
+        setTimeTable(allTimeTables[semIndex][0]);
       } else {
         setTimeTable(emptyTimeTableDetails);
       }
@@ -110,53 +150,57 @@ export default function TimeTablesPage() {
       console.error("Error selecting timetable:", error);
       setTimeTable(emptyTimeTableDetails);
     }
-  }, [currentSemester, currentSection, allTimeTables]);
+  }, [currentYear, currentSemester, currentDepartment, allTimeTables]);
 
   const handlePeriodClick = (dayIndex: number, periodIndex: number) => {
-    if (!fillManually) return;
+    // Check if it's a break period
+    const isBreak =
+      timeTableStructure.breaksPerSemester[absoluteSemester]?.includes(
+        periodIndex
+      );
+    if (isBreak) return; // Don't allow editing break periods
+
     setSelectedPeriod([dayIndex, periodIndex]);
     setShowSelector(true);
   };
 
-  const handlePeriodSet = async (teachers: string[], subject: string) => {
+  const handlePeriodSet = async (teachers: string[], subject: string, room: string) => {
     if (!selectedPeriod) return;
 
     const [dayIndex, periodIndex] = selectedPeriod;
-    const newTimeTable: TimeTableType = [...timeTable];
 
+    // Deep clone the timetable to ensure proper state update
+    const newTimeTable: TimeTableType = JSON.parse(JSON.stringify(timeTable));
+
+    // Initialize day array if it doesn't exist
     if (!newTimeTable[dayIndex]) {
       newTimeTable[dayIndex] = [];
     }
 
-    const room = subjectsDetails[subject]?.roomCodes?.[0] || "";
+    // Set the period with teacher names, subject code, and room
     newTimeTable[dayIndex][periodIndex] = [teachers.join("+"), subject, room];
 
     try {
       await timetableService.saveSchedule(
-        currentSemester + 1,
-        currentSection + 1,
+        absoluteSemester + 1,
+        1, // Using section 1 as default
         newTimeTable
       );
+
+      // Update both local state and global state
       setTimeTable(newTimeTable);
+      const updatedAllTimeTables = [...allTimeTables];
+      if (!updatedAllTimeTables[absoluteSemester]) {
+        updatedAllTimeTables[absoluteSemester] = [];
+      }
+      updatedAllTimeTables[absoluteSemester][0] = newTimeTable;
+      setAllTimeTables(updatedAllTimeTables);
+
       setShowSelector(false);
       toast.success("Period updated successfully");
     } catch (error) {
       console.error("Failed to save schedule:", error);
       toast.error("Failed to save schedule");
-    }
-  };
-
-  const handleAutoFill = async () => {
-    setGenerating(true);
-    try {
-      const generatedTimetables = await timetableService.generateTimeTable();
-      setAllTimeTables(generatedTimetables);
-      toast.success("Timetable generated successfully");
-    } catch (error) {
-      console.error("Failed to generate timetable:", error);
-      toast.error("Failed to generate timetable");
-    } finally {
-      setGenerating(false);
     }
   };
 
@@ -169,9 +213,6 @@ export default function TimeTablesPage() {
     );
   }
 
-  const currentSectionsCount =
-    timeTableStructure.sectionsPerSemester[currentSemester] || 0;
-
   return (
     <div className="p-6 space-y-6">
       <Card>
@@ -182,27 +223,27 @@ export default function TimeTablesPage() {
               <div>
                 <CardTitle>College Timetable</CardTitle>
                 <CardDescription>
-                  Manage and generate timetables for all years and sections
+                  Manage and generate timetables for all years and departments
                 </CardDescription>
               </div>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Semester Tabs */}
-          <SemesterTabs
-            semesterCount={timeTableStructure.semesterCount}
-            currentSemester={currentSemester}
-            onSemesterChange={setCurrentSemester}
+          {/* Year Tabs */}
+          <YearTabs
+            yearCount={4}
+            currentYear={currentYear}
+            onYearChange={setCurrentYear}
           />
 
-          {/* Controls */}
+          {/* Semester and Department Controls */}
           <TimetableControls
-            onAutoFillClick={handleAutoFill}
-            onFillManuallyChange={setFillManually}
-            currentSection={currentSection}
-            sectionsCount={currentSectionsCount}
-            onSectionChange={setCurrentSection}
+            currentSemester={currentSemester}
+            onSemesterChange={setCurrentSemester}
+            departments={departments}
+            currentDepartment={currentDepartment}
+            onDepartmentChange={setCurrentDepartment}
           />
 
           {/* Timetable */}
@@ -212,7 +253,7 @@ export default function TimeTablesPage() {
               details={timeTable}
               periodClickHandler={handlePeriodClick}
               breakTimeIndexs={
-                timeTableStructure.breaksPerSemester[currentSemester] || []
+                timeTableStructure.breaksPerSemester[absoluteSemester] || []
               }
               noOfPeriods={timeTableStructure.periodCount}
               dayNames={dayNames}
@@ -223,11 +264,9 @@ export default function TimeTablesPage() {
               <AlertDescription>
                 {Object.keys(subjectsDetails).length === 0
                   ? "No courses found. Please add courses first."
-                  : `No timetable found for Year ${
-                      currentSemester + 1
-                    } Section ${String.fromCharCode(
-                      65 + currentSection
-                    )}. Click 'Auto Fill' to generate or 'Fill Manually' to create one.`}
+                  : departments.length === 0
+                  ? "No departments found. Please add departments first."
+                  : `No timetable found for the selected year, semester, and department. Click on a period to manually add classes.`}
               </AlertDescription>
             </Alert>
           )}
@@ -240,22 +279,6 @@ export default function TimeTablesPage() {
         onOpenChange={setShowSelector}
         onSelect={handlePeriodSet}
       />
-
-      {/* Loading overlay for generation */}
-      {generating && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center gap-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-                <p className="text-sm text-muted-foreground">
-                  Generating timetable with AI...
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }

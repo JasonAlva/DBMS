@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TimeTableType, SubjectsDetailsList } from "./types";
 
@@ -45,6 +46,20 @@ export default function TimeTable({
     return breakTimeIndexs.includes(periodIndex);
   };
 
+  const getTimeSlot = (periodIndex: number) => {
+    const timeSlots = [
+      "9:00-10:00",
+      "10:00-11:00",
+      "11:00-11:30",
+      "11:30-12:30",
+      "12:30-1:30",
+      "1:30-2:30",
+      "2:30-3:30",
+      "3:30-4:30",
+    ];
+    return timeSlots[periodIndex] || "";
+  };
+
   return (
     <div className={cn("w-full overflow-auto", className)}>
       <div className="min-w-[800px]">
@@ -55,11 +70,16 @@ export default function TimeTable({
             <div
               key={i}
               className={cn(
-                "font-semibold text-center py-2 text-sm",
-                isBreak(i) && "text-muted-foreground"
+                "font-semibold text-center py-2 text-xs",
+                isBreak(i)
+                  ? "text-muted-foreground bg-muted/30 rounded-md"
+                  : "text-foreground"
               )}
             >
-              {isBreak(i) ? "Break" : `Period ${i + 1}`}
+              {getTimeSlot(i)}
+              {isBreak(i) && (
+                <div className="text-[10px] font-normal mt-1">Break</div>
+              )}
             </div>
           ))}
         </div>
@@ -97,31 +117,36 @@ export default function TimeTable({
                   <Card
                     key={periodIndex}
                     className={cn(
-                      "min-h-20 cursor-pointer transition-all hover:shadow-md",
-                      !periodContent && "bg-muted/20"
+                      "min-h-20 cursor-pointer transition-all hover:shadow-md group relative",
+                      !periodContent && "bg-muted/20 hover:bg-muted/40"
                     )}
                     onClick={() => periodClickHandler?.(dayIndex, periodIndex)}
                   >
-                    <CardContent className="p-2 h-full flex flex-col justify-center">
+                    <CardContent className="p-2 h-full flex flex-col justify-center items-center">
                       {periodContent ? (
                         <>
                           <Badge
-                            className="mb-1 text-xs"
+                            className="mb-1 text-xs w-full justify-center"
                             style={{ backgroundColor: periodContent.color }}
                           >
                             {periodContent.subject}
                           </Badge>
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="text-xs text-muted-foreground truncate w-full text-center">
                             {periodContent.teacher}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {periodContent.room}
-                          </p>
+                          {periodContent.room && (
+                            <p className="text-xs text-muted-foreground">
+                              {periodContent.room}
+                            </p>
+                          )}
                         </>
                       ) : (
-                        <p className="text-xs text-center text-muted-foreground">
-                          Empty
-                        </p>
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                          <p className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                            Add Class
+                          </p>
+                        </div>
                       )}
                     </CardContent>
                   </Card>

@@ -5,14 +5,14 @@ export type DaySchedule = (PeriodDetails | null)[];
 
 export type TimeTableType = (DaySchedule | null)[];
 
-export type FullTimeTable = TimeTableType[][];
+export type FullTimeTable = TimeTableType[][]; // [semester][section][day][period]
 
 export interface TimeTableStructure {
-  breaksPerSemester: number[][];
-  periodCount: number;
-  sectionsPerSemester: number[];
-  semesterCount: number;
-  dayCount: number;
+  breaksPerSemester: number[][]; // Break positions for each semester
+  periodCount: number; // Total slots including breaks
+  sectionsPerSemester: number[]; // Number of sections per semester
+  semesterCount: number; // Total semesters (e.g., 8 for 4 years)
+  dayCount: number; // Number of days (e.g., 5 for Mon-Fri)
 }
 
 export interface SubjectDetails {
@@ -23,7 +23,7 @@ export interface SubjectDetails {
 }
 
 export interface SubjectsDetailsList {
-  [key: string]: SubjectDetails;
+  [subjectCode: string]: SubjectDetails;
 }
 
 export interface Teacher {
@@ -36,6 +36,14 @@ export interface Teacher {
 export interface Subject {
   id: string;
   name: string;
-  code?: string;
+  code: string;
   credits?: number;
+  department_id?: string;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
 }
